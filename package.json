@@ -1,8 +1,8 @@
 {
-  "name": "ssh-tunnel",
+  "name": "ssh-tun",
   "version": "1.0.0",
   "description": "Establish ssh tunnel to remote host to forward remote port to local one",
-  "main": "dist/index.js",
+  "main": "dist/tunnel.js",
   "scripts": {
     "build": "babel lib -d dist",
     "watch": "gaze 'npm run build' lib/*",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:gemini-testing/ssh-tunnel.git"
+    "url": "git@github.com:gemini-testing/ssh-tun.git"
   },
   "keywords": [
     "ssh",
@@ -27,9 +27,9 @@
   "author": "Oleg Gaidarenko <markelog@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gemini-testing/ssh-tunnel/issues"
+    "url": "https://github.com:gemini-testing/ssh-tun.git/issues"
   },
-  "homepage": "https://github.com/gemini-testing/ssh-tunnel",
+  "homepage": "https://github.com/gemini-testing/ssh-tun",
   "dependencies": {
     "inherit": "^2.2.2",
     "karma-webdriver-launcher": "^1.0.4",
