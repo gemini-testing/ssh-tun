@@ -1,0 +1,50 @@
+{
+  "name": "ssh-tun",
+  "version": "1.0.0",
+  "description": "Establish ssh tunnel to remote host to forward remote port to local one",
+  "main": "dist/tunnel.js",
+  "scripts": {
+    "build": "babel lib -d dist",
+    "watch": "gaze 'npm run build' lib/*",
+    "watch-test": "mocha test/lib lib --recursive --compilers js:babel/register --watch",
+    "tw": "npm run watch-test",
+    "lint": "npm run eslint && npm run jscs",
+    "jscs": "jscs lib test",
+    "eslint": "eslint lib test",
+    "test": "npm run lint && mocha test/lib lib --recursive --compilers js:babel/register"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:gemini-testing/ssh-tun.git"
+  },
+  "keywords": [
+    "ssh",
+    "tunnel",
+    "forward",
+    "remote",
+    "local"
+  ],
+  "author": "Oleg Gaidarenko <markelog@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com:gemini-testing/ssh-tun.git/issues"
+  },
+  "homepage": "https://github.com/gemini-testing/ssh-tun",
+  "dependencies": {
+    "inherit": "^2.2.2",
+    "karma-webdriver-launcher": "^1.0.4",
+    "lodash": "^3.10.1",
+    "ssh2": "^0.4.11",
+    "vow": "^0.4.10"
+  },
+  "devDependencies": {
+    "babel": "^5.8.23",
+    "chai": "^3.3.0",
+    "eslint": "^1.5.1",
+    "gaze-cli": "^0.2.0",
+    "jscs": "^2.1.1",
+    "mocha": "^2.3.3",
+    "rewire": "^2.3.4",
+    "sinon": "^1.17.0"
+  }
+}
