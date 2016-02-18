@@ -1,0 +1,58 @@
+{
+  "name": "ssh-tun",
+  "version": "0.0.0",
+  "description": "Module for establishing ssh tunnel",
+  "keywords": [
+    "ssh",
+    "tunnel"
+  ],
+  "author": "Ilia Isupov <ilia.isupov@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gemini-testing/ssh-tun/"
+  },
+  "homepage": "https://github.com/gemini-testing/ssh-tun/",
+  "bugs": "https://github.com/gemini-testing/ssh-tun/issues",
+  "maintainers": [
+    {
+      "name": "Ilia Isupov",
+      "email": "ilia.isupov@gmail.com",
+      "github-username": "swinx"
+    },
+    {
+      "name": "Anton Usmansky",
+      "email": "j0tunn@ya.ru",
+      "github-username": "j0tunn"
+    }
+  ],
+  "contributors": [
+    "Ilia Isupov <ilia.isupov@gmail.com>",
+    "Anton Usmansky <j0tunn@ya.ru>"
+  ],
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "scripts": {
+    "test": "npm run lint && npm run unit-test",
+    "lint": "jshint . && jscs .",
+    "unit-test": "istanbul test _mocha --recursive test"
+  },
+  "dependencies": {
+    "inherit": "^2.2.2",
+    "q": "^1.4.1"
+  },
+  "devDependencies": {
+    "chai": "^3.3.0",
+    "chai-as-promised": "^5.1.0",
+    "coveralls": "^2.11.4",
+    "istanbul": "^0.3.20",
+    "jscs": "^2.1.1",
+    "jshint": "^2.8.0",
+    "mocha": "^2.3.3",
+    "qemitter": "^1.0.0",
+    "sinon": "^1.16.1",
+    "sinon-chai": "^2.8.0",
+    "lodash": "^3.10.1"
+  }
+}

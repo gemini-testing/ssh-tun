@@ -1,0 +1,151 @@
+'use strict';
+
+var inherit = require('inherit'),
+    q = require('q'),
+    childProcess = require('child_process'),
+    util = require('util');
+
+var DEFAULTS = {
+    MAX_RETRIES: 5,
+    CONNECT_TIMEOUT: 10000
+};
+
+var Tunnel = inherit({
+    /**
+     * Constuctor
+     * @param {object} opts tunnel options
+     * @param {string} opts.host remote host address
+     * @param {object} opts.ports remote host ports range
+     * @param {number} opts.localport local port number
+     * @param {number} [opts.maxRetries=5] max attempts to create tunnel
+     * @param {number} [opts.connectTimeout=10000] ssh connect timeout
+     */
+    __constructor: function (opts) {
+        this._host = opts.host;
+        this._port = this._generateRandomPort(opts.ports);
+        this.proxyUrl = util.format('%s:%d', this._host, this._port);
+        this._localPort = opts.localport;
+        this._connectTimeout = opts.connectTimeout || DEFAULTS.CONNECT_TIMEOUT;
+        this._tunnel = null;
+        this._tunnelDeferred = q.defer();
+        this._closeDeferred = q.defer();
+    },
+
+    /**
+     * Tries to open ssh connection to remote server
+     * @returns {Promise}
+     */
+    open: function () {
+        var _this = this;
+
+        console.log('INFO: creating tunnel to %s', this.proxyUrl);
+
+        this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
+
+        this._tunnel.stderr.on('data', function (data) {
+            if (/success/.test(data)) {
+                return _this._resolveTunnel();
+            }
+
+            if (/failed/.test(data)) {
+                if (_this._tunnelDeferred.promise.isFulfilled()) {
+                    return;
+                }
+                return _this._rejectTunnel();
+            }
+        });
+
+        this._tunnel.on('close', function (code) {
+            return _this._closeTunnel(code);
+        });
+
+        this._tunnel.on('error', function () {
+            return _this._rejectTunnel();
+        });
+
+        return _this._tunnelDeferred.promise.timeout(this._connectTimeout);
+    },
+
+    /**
+     * Closes connection. If no connection established does nothing
+     * @returns {Promise}
+     */
+    close: function () {
+        if (!this._tunnel) {
+            return q();
+        }
+
+        var _this = this;
+
+        this._tunnel.kill('SIGTERM');
+        return this._closeDeferred.promise.timeout(3000).fail(function () {
+            _this._tunnel.kill('SIGKILL');
+            return _this._closeTunnel(_this._host, -1);
+        });
+    },
+
+    _resolveTunnel: function () {
+        console.log('INFO: Tunnel created to %s', this.proxyUrl);
+        this._tunnelDeferred.resolve();
+    },
+
+    _rejectTunnel: function () {
+        var message = util.format('ERROR: failed to create tunnel to %s.', this.proxyUrl),
+            error = new Error(message);
+
+        console.log(message);
+        this._tunnelDeferred.reject(error);
+    },
+
+    _closeTunnel: function (exitCode) {
+        console.log('INFO: Tunnel to %s closed. Exit code: %d', this.proxyUrl, exitCode);
+        this._closeDeferred.resolve();
+    },
+
+    _buildSSHArgs: function () {
+        return [
+            util.format('-R:%d:localhost:%d', this._port, this._localPort),
+            '-N',
+            '-v',
+            this._host
+        ];
+    },
+
+    _generateRandomPort: function (ports) {
+        var min = ports.min,
+            max = ports.max;
+
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+});
+
+/**
+ * Tries to open tunnel several times
+ * @param {object} opts opts which will be passed to created tunnel
+ * @param {number} retries amount of retries to open tunnel
+ * @returns {Promise}
+ */
+Tunnel.openWithRetries = function (opts, retries) {
+    retries = retries || DEFAULTS.MAX_RETRIES;
+
+    function retry_(retriesLeft) {
+        if (!retriesLeft) {
+            return q.reject(util.format('ERROR: failed to create tunnel after %d attempts', retries));
+        }
+
+        var tunnel = new Tunnel(opts);
+
+        return tunnel.open()
+            .then(function () {
+                return q.resolve(tunnel);
+            })
+            .fail(function () {
+                return tunnel.close()
+                    .then(retry_.bind(null, retriesLeft - 1));
+            });
+    }
+
+    return retry_(retries);
+};
+
+module.exports = Tunnel;
