@@ -1,6 +1,6 @@
 {
   "name": "ssh-tun",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Module for establishing ssh tunnel",
   "keywords": [
     "ssh",
