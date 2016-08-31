@@ -17,13 +17,16 @@ var Tunnel = inherit({
      * @param {string} opts.host remote host address
      * @param {object} opts.ports remote host ports range
      * @param {number} opts.localport local port number
+     * @param {string} [opts.user] remote host user
      * @param {number} [opts.maxRetries=5] max attempts to create tunnel
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
      */
     __constructor: function (opts) {
         this._host = opts.host;
         this._port = this._generateRandomPort(opts.ports);
-        this.proxyUrl = util.format('%s:%d', this._host, this._port);
+        this._user = opts.user;
+        this.proxyHost = util.format('%s:%d', this._host, this._port);
+        this.proxyUrl = this.proxyHost; // deprecated, use proxyHost
         this._localPort = opts.localport;
         this._connectTimeout = opts.connectTimeout || DEFAULTS.CONNECT_TIMEOUT;
         this._tunnel = null;
@@ -38,7 +41,7 @@ var Tunnel = inherit({
     open: function () {
         var _this = this;
 
-        console.log('INFO: creating tunnel to %s', this.proxyUrl);
+        console.log('INFO: creating tunnel to %s', this.proxyHost);
 
         this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
 
@@ -85,12 +88,12 @@ var Tunnel = inherit({
     },
 
     _resolveTunnel: function () {
-        console.log('INFO: Tunnel created to %s', this.proxyUrl);
+        console.log('INFO: Tunnel created to %s', this.proxyHost);
         this._tunnelDeferred.resolve();
     },
 
     _rejectTunnel: function () {
-        var message = util.format('ERROR: failed to create tunnel to %s.', this.proxyUrl),
+        var message = util.format('ERROR: failed to create tunnel to %s.', this.proxyHost),
             error = new Error(message);
 
         console.log(message);
@@ -98,7 +101,7 @@ var Tunnel = inherit({
     },
 
     _closeTunnel: function (exitCode) {
-        console.log('INFO: Tunnel to %s closed. Exit code: %d', this.proxyUrl, exitCode);
+        console.log('INFO: Tunnel to %s closed. Exit code: %d', this.proxyHost, exitCode);
         this._closeDeferred.resolve();
     },
 
@@ -107,7 +110,7 @@ var Tunnel = inherit({
             util.format('-R:%d:localhost:%d', this._port, this._localPort),
             '-N',
             '-v',
-            this._host
+            (this._user ? this._user + '@' : '') + this._host
         ];
     },
 

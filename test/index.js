@@ -24,13 +24,13 @@ describe('Tunnel', function () {
     });
 
     describe('constructor', function () {
-        it('should generate proxy url from host and ports range', function () {
+        it('should generate proxy host from host and ports range', function () {
             var tunnel = createTunnel({
                 host: 'test_host',
                 ports: { min: 0, max: 1 }
             });
 
-            expect(tunnel.proxyUrl).to.match(/test_host:\d+/);
+            expect(tunnel.proxyHost).to.match(/test_host:\d+/);
         });
 
         it('should set port as passed in ports if min and max ports are same', function () {
@@ -38,7 +38,7 @@ describe('Tunnel', function () {
                 ports: { min: 8080, max: 8080 }
             });
 
-            expect(tunnel.proxyUrl).to.have.string(':8080');
+            expect(tunnel.proxyHost).to.have.string(':8080');
         });
 
         it('should set default timeout as 10 seconds', function () {
@@ -87,6 +87,20 @@ describe('Tunnel', function () {
                         .and.to.contain('-v');
                 });
 
+                it('should spawn tunnel to remote host using provided user ', function () {
+                    tunnel = createTunnel({
+                        host: 'remote_host',
+                        user: 'user',
+                        localport: 8080
+                    });
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('user@remote_host');
+                });
+
                 it('should resolve promise if tunnel successfully created', function () {
                     tunnel = createTunnel();
 
@@ -106,7 +120,7 @@ describe('Tunnel', function () {
 
                     ssh.stderr.emit('data', 'success');
 
-                    expect(tunnel.proxyUrl).to.match(/^some_ssh_host:\d+/);
+                    expect(tunnel.proxyHost).to.match(/^some_ssh_host:\d+/);
                 });
 
                 it('should reject tunnel opening if failed to create tunnel', function () {
@@ -129,7 +143,7 @@ describe('Tunnel', function () {
                     ssh.stderr.emit('data', 'failed');
 
                     expect(log)
-                        .to.be.not.calledWith(util.format('ERROR: failed to create tunnel to %s.', tunnel.proxyUrl));
+                        .to.be.not.calledWith(util.format('ERROR: failed to create tunnel to %s.', tunnel.proxyHost));
                 });
 
                 it('should reject tunnel opening if error occured', function () {
