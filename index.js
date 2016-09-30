@@ -22,10 +22,10 @@ var Tunnel = inherit({
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
      */
     __constructor: function (opts) {
-        this._host = opts.host;
-        this._port = this._generateRandomPort(opts.ports);
+        this.host = opts.host;
+        this.port = this._generateRandomPort(opts.ports);
         this._user = opts.user;
-        this.proxyHost = util.format('%s:%d', this._host, this._port);
+        this.proxyHost = util.format('%s:%d', this.host, this.port);
         this.proxyUrl = this.proxyHost; // deprecated, use proxyHost
         this._localPort = opts.localport;
         this._connectTimeout = opts.connectTimeout || DEFAULTS.CONNECT_TIMEOUT;
@@ -83,7 +83,7 @@ var Tunnel = inherit({
         this._tunnel.kill('SIGTERM');
         return this._closeDeferred.promise.timeout(3000).fail(function () {
             _this._tunnel.kill('SIGKILL');
-            return _this._closeTunnel(_this._host, -1);
+            return _this._closeTunnel(_this.host, -1);
         });
     },
 
@@ -107,10 +107,10 @@ var Tunnel = inherit({
 
     _buildSSHArgs: function () {
         return [
-            util.format('-R:%d:localhost:%d', this._port, this._localPort),
+            util.format('-R:%d:localhost:%d', this.port, this._localPort),
             '-N',
             '-v',
-            (this._user ? this._user + '@' : '') + this._host
+            (this._user ? this._user + '@' : '') + this.host
         ];
     },
 
