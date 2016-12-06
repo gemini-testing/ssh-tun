@@ -81,10 +81,26 @@ describe('Tunnel', function () {
 
                     var sshArgs = childProcess.spawn.lastCall.args[1];
 
-                    expect(sshArgs[0]).to.match(/-R:\d+:localhost:8080/);
+                    expect(sshArgs[0]).to.match(/-R \d+:localhost:8080/);
                     expect(sshArgs).to.contain('remote_host')
                         .and.to.contain('-N')
                         .and.to.contain('-v');
+                });
+
+                it('should spawn tunnel via the default ssh port', function () {
+                    createTunnel().open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('-p 22');
+                });
+
+                it('should spawn tunnel via the specified ssh port', function () {
+                    createTunnel({ sshPort: 100500 }).open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('-p 100500');
                 });
 
                 it('should spawn tunnel to remote host using provided user ', function () {
