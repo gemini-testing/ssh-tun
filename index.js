@@ -27,7 +27,7 @@ var Tunnel = inherit({
         this.host = opts.host;
         this.port = this._generateRandomPort(opts.ports);
         this._sshPort = opts.sshPort || DEFAULTS.SSH_PORT;
-        this._user = opts.user;
+        this.user = opts.user;
         this.proxyHost = util.format('%s:%d', this.host, this.port);
         this.proxyUrl = this.proxyHost; // deprecated, use proxyHost
         this._localPort = opts.localport;
@@ -114,7 +114,7 @@ var Tunnel = inherit({
             '-N',
             '-v',
             util.format('-p %d', this._sshPort),
-            (this._user ? this._user + '@' : '') + this.host
+            (this.user ? this.user + '@' : '') + this.host
         ];
     },
 
