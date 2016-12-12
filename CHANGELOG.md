@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 - 2016.12.12
+
+* Ability to create ssh tunnel via the specified port
+* Add `user` public option
+
 ## 1.2.0 - 2016.09.30
 
 * Add `host` & `port` public options
