@@ -7,7 +7,8 @@ var inherit = require('inherit'),
 
 var DEFAULTS = {
     MAX_RETRIES: 5,
-    CONNECT_TIMEOUT: 10000
+    CONNECT_TIMEOUT: 10000,
+    SSH_PORT: 22
 };
 
 var Tunnel = inherit({
@@ -18,13 +19,15 @@ var Tunnel = inherit({
      * @param {object} opts.ports remote host ports range
      * @param {number} opts.localport local port number
      * @param {string} [opts.user] remote host user
+     * @param {string} [opts.sshPort=22] host port to create tunnel
      * @param {number} [opts.maxRetries=5] max attempts to create tunnel
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
      */
     __constructor: function (opts) {
         this.host = opts.host;
         this.port = this._generateRandomPort(opts.ports);
-        this._user = opts.user;
+        this._sshPort = opts.sshPort || DEFAULTS.SSH_PORT;
+        this.user = opts.user;
         this.proxyHost = util.format('%s:%d', this.host, this.port);
         this.proxyUrl = this.proxyHost; // deprecated, use proxyHost
         this._localPort = opts.localport;
@@ -107,10 +110,11 @@ var Tunnel = inherit({
 
     _buildSSHArgs: function () {
         return [
-            util.format('-R:%d:localhost:%d', this.port, this._localPort),
+            util.format('-R %d:localhost:%d', this.port, this._localPort),
             '-N',
             '-v',
-            (this._user ? this._user + '@' : '') + this.host
+            util.format('-p %d', this._sshPort),
+            (this.user ? this.user + '@' : '') + this.host
         ];
     },
 
