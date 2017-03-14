@@ -35,6 +35,8 @@ var Tunnel = inherit({
         this._tunnel = null;
         this._tunnelDeferred = q.defer();
         this._closeDeferred = q.defer();
+
+        console.log('USER: ', this.user);
     },
 
     /**
@@ -49,6 +51,8 @@ var Tunnel = inherit({
         this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
 
         this._tunnel.stderr.on('data', function (data) {
+            console.log(`${new Date(Date.now()).toLocaleString()}: ${data.toString()}`);
+
             if (/success/.test(data)) {
                 return _this._resolveTunnel();
             }
@@ -110,6 +114,7 @@ var Tunnel = inherit({
 
     _buildSSHArgs: function () {
         return [
+            '-v',
             util.format('-R %d:localhost:%d', this.port, this._localPort),
             '-N',
             '-v',
