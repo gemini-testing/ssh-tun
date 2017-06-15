@@ -77,6 +77,9 @@ var Tunnel = inherit({
      * @returns {Promise}
      */
     close: function () {
+        console.log('CLOSE TUNNEL THROUGH "CLOSE" METHOD');
+        console.log('STACK: ', new Error().stack);
+
         if (!this._tunnel) {
             return q();
         }
@@ -104,6 +107,8 @@ var Tunnel = inherit({
     },
 
     _closeTunnel: function (exitCode) {
+        console.log('CLOSE TUNNEL THROUGH "_CLOSETUNNEL" METHOD');
+        console.log('STACK: ', new Error().stack);
         console.log('INFO: Tunnel to %s closed. Exit code: %d', this.proxyHost, exitCode);
         this._closeDeferred.resolve();
     },
