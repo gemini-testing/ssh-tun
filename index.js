@@ -44,7 +44,7 @@ var Tunnel = inherit({
     open: function () {
         var _this = this;
 
-        console.log('INFO: creating tunnel to %s', this.proxyHost);
+        console.info('INFO: creating tunnel to %s', this.proxyHost);
 
         this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
 
@@ -58,6 +58,13 @@ var Tunnel = inherit({
                     return;
                 }
                 return _this._rejectTunnel();
+            }
+
+            if (/killed/i.test(data)) {
+                var msg = data.toString().toLowerCase();
+                var killMsg = msg.slice(msg.indexOf('killed')).trim();
+
+                console.info('INFO: Tunnel is ' + killMsg);
             }
         });
 
@@ -86,12 +93,12 @@ var Tunnel = inherit({
         this._tunnel.kill('SIGTERM');
         return this._closeDeferred.promise.timeout(3000).fail(function () {
             _this._tunnel.kill('SIGKILL');
-            return _this._closeTunnel(_this.host, -1);
+            return _this._closeTunnel(-1);
         });
     },
 
     _resolveTunnel: function () {
-        console.log('INFO: Tunnel created to %s', this.proxyHost);
+        console.info('INFO: Tunnel created to %s', this.proxyHost);
         this._tunnelDeferred.resolve();
     },
 
@@ -99,12 +106,12 @@ var Tunnel = inherit({
         var message = util.format('ERROR: failed to create tunnel to %s.', this.proxyHost),
             error = new Error(message);
 
-        console.log(message);
+        console.info(message);
         this._tunnelDeferred.reject(error);
     },
 
     _closeTunnel: function (exitCode) {
-        console.log('INFO: Tunnel to %s closed. Exit code: %d', this.proxyHost, exitCode);
+        console.info('INFO: Tunnel to %s closed. Exit code: %d', this.proxyHost, exitCode);
         this._closeDeferred.resolve();
     },
 
