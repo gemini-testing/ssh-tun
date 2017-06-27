@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0 - 2017.06.27
+
+* Display a kill signal with which tunnel is closed
+
 ## 1.3.0 - 2016.12.12
 
 * Ability to create ssh tunnel via the specified port
