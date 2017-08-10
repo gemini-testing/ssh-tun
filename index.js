@@ -1,7 +1,7 @@
 'use strict';
 
 var inherit = require('inherit'),
-    q = require('q'),
+    Promise = require('bluebird'),
     childProcess = require('child_process'),
     util = require('util');
 
@@ -10,6 +10,20 @@ var DEFAULTS = {
     CONNECT_TIMEOUT: 10000,
     SSH_PORT: 22
 };
+
+function defer() {
+    var resolve, reject;
+    var promise = new Promise(function () {
+        resolve = arguments[0];
+        reject = arguments[1];
+    });
+
+    return {
+        resolve: resolve,
+        reject: reject,
+        promise: promise
+    };
+}
 
 var Tunnel = inherit({
     /**
@@ -33,8 +47,8 @@ var Tunnel = inherit({
         this._localPort = opts.localport;
         this._connectTimeout = opts.connectTimeout || DEFAULTS.CONNECT_TIMEOUT;
         this._tunnel = null;
-        this._tunnelDeferred = q.defer();
-        this._closeDeferred = q.defer();
+        this._tunnelDeferred = defer();
+        this._closeDeferred = defer();
     },
 
     /**
@@ -85,13 +99,13 @@ var Tunnel = inherit({
      */
     close: function () {
         if (!this._tunnel) {
-            return q();
+            return Promise.resolve();
         }
 
         var _this = this;
 
         this._tunnel.kill('SIGTERM');
-        return this._closeDeferred.promise.timeout(3000).fail(function () {
+        return this._closeDeferred.promise.timeout(3000).catch(function () {
             _this._tunnel.kill('SIGKILL');
             return _this._closeTunnel(-1);
         });
@@ -144,16 +158,16 @@ Tunnel.openWithRetries = function (opts, retries) {
 
     function retry_(retriesLeft) {
         if (!retriesLeft) {
-            return q.reject(util.format('ERROR: failed to create tunnel after %d attempts', retries));
+            return Promise.reject(util.format('ERROR: failed to create tunnel after %d attempts', retries));
         }
 
         var tunnel = new Tunnel(opts);
 
         return tunnel.open()
             .then(function () {
-                return q.resolve(tunnel);
+                return Promise.resolve(tunnel);
             })
-            .fail(function () {
+            .catch(function () {
                 return tunnel.close()
                     .then(retry_.bind(null, retriesLeft - 1));
             });

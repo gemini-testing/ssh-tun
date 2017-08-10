@@ -39,8 +39,8 @@
     "unit-test": "istanbul test _mocha --recursive test"
   },
   "dependencies": {
-    "inherit": "^2.2.2",
-    "q": "^1.4.1"
+    "bluebird": "^3.5.0",
+    "inherit": "^2.2.2"
   },
   "devDependencies": {
     "chai": "^3.3.0",
@@ -50,7 +50,6 @@
     "jscs": "^2.1.1",
     "jshint": "^2.8.0",
     "mocha": "^2.3.3",
-    "qemitter": "^1.0.0",
     "sinon": "^1.16.1",
     "sinon-chai": "^2.8.0",
     "lodash": "^3.10.1"

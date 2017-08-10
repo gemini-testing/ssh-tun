@@ -1,6 +1,6 @@
 var Tunnel = require('../'),
     _ = require('lodash'),
-    q = require('q'),
+    Promise = require('bluebird'),
     childProcess = require('child_process'),
     events = require('events'),
     util = require('util');
@@ -44,7 +44,7 @@ describe('Tunnel', function () {
 
         it('should set default timeout as 10 seconds', function () {
             var tunnel = createTunnel(),
-                timeout = sandbox.stub(q.makePromise.prototype, 'timeout'); // promise constructor available like this?!
+                timeout = sandbox.stub(Promise.prototype, 'timeout');
 
             tunnel.open();
 
@@ -59,7 +59,7 @@ describe('Tunnel', function () {
 
                 var result = tunnel.open();
 
-                expect(q.isPromise(result)).to.be.true;
+                expect(result).to.be.an.instanceof(Promise);
             });
 
             describe('tunnel spawn and events', function () {
@@ -215,7 +215,7 @@ describe('Tunnel', function () {
                 tunnel = createTunnel();
                 tunnel.open();
 
-                expect(q.isPromise(tunnel.close())).to.be.true;
+                expect(tunnel.close()).to.be.an.instanceof(Promise);
             });
 
             it('should try to kill tunnel using SIGTERM', function () {
@@ -252,14 +252,14 @@ describe('Tunnel', function () {
         describe('openWithRetries', function () {
             beforeEach(function () {
                 sandbox.stub(Tunnel.prototype);
-                Tunnel.prototype.open.returns(q());
-                Tunnel.prototype.close.returns(q());
+                Tunnel.prototype.open.returns(Promise.resolve());
+                Tunnel.prototype.close.returns(Promise.resolve());
             });
 
             it('should return promise', function () {
                 var result = Tunnel.openWithRetries(defaultOpts());
 
-                expect(q.isPromise(result)).to.be.true;
+                expect(result).to.be.an.instanceof(Promise);
             });
 
             it('should try to open tunnel with passed opts', function () {
@@ -271,13 +271,13 @@ describe('Tunnel', function () {
             });
 
             it('should resolve promise if tunnel opened successfully', function () {
-                Tunnel.prototype.open.returns(q());
+                Tunnel.prototype.open.returns(Promise.resolve());
 
                 return expect(Tunnel.openWithRetries(defaultOpts())).to.be.eventually.resolved;
             });
 
             it('should resolve promise with tunnel instance', function () {
-                Tunnel.prototype.open.returns(q());
+                Tunnel.prototype.open.returns(Promise.resolve());
 
                 return Tunnel.openWithRetries(defaultOpts()).then(function (tunnel) {
                     expect(tunnel).to.be.instanceOf(Tunnel);
@@ -285,23 +285,23 @@ describe('Tunnel', function () {
             });
 
             it('should reject tunnel if failed to open tunnel after retries', function () {
-                Tunnel.prototype.open.returns(q.reject());
+                Tunnel.prototype.open.returns(Promise.reject());
 
                 return expect(Tunnel.openWithRetries(defaultOpts)).to.be.eventually.rejected;
             });
 
             it('should retry to create tunnel 5 times by default', function () {
-                Tunnel.prototype.open.returns(q.reject());
+                Tunnel.prototype.open.returns(Promise.reject());
 
-                return Tunnel.openWithRetries(defaultOpts()).fail(function () {
+                return Tunnel.openWithRetries(defaultOpts()).catch(function () {
                     expect(Tunnel.prototype.open.callCount).to.be.equal(5);
                 });
             });
 
             it('should retry create tunnel retries times', function () {
-                Tunnel.prototype.open.returns(q.reject());
+                Tunnel.prototype.open.returns(Promise.reject());
 
-                return Tunnel.openWithRetries(defaultOpts(), 10).fail(function () {
+                return Tunnel.openWithRetries(defaultOpts(), 10).catch(function () {
                     expect(Tunnel.prototype.open.callCount).to.be.equal(10);
                 });
             });
