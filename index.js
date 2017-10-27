@@ -49,7 +49,9 @@ var Tunnel = inherit({
         this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
 
         this._tunnel.stderr.on('data', function (data) {
-            if (/success/.test(data)) {
+            console.log('TUN_DEBUG!!');
+            console.log(data.toString());
+	    if (/success/.test(data)) {
                 return _this._resolveTunnel();
             }
 
