@@ -245,6 +245,28 @@ describe('Tunnel', function () {
                     clock.restore();
                 });
             });
+
+            it('should emit close event', function () {
+                tunnel = createTunnel();
+                tunnel.open();
+
+                var closeHandler = sandbox.stub();
+                tunnel.on('close', closeHandler);
+                ssh.emit('close', 15, 'SIGTERM');
+
+                return expect(closeHandler).to.be.calledWith(15, 'SIGTERM');
+            });
+
+            it('should emit exit event', function () {
+                tunnel = createTunnel();
+                tunnel.open();
+
+                var exitHandler = sandbox.stub();
+                tunnel.on('exit', exitHandler);
+                ssh.emit('exit', 15, 'SIGTERM');
+
+                return expect(exitHandler).to.be.calledWith(15, 'SIGTERM');
+            });
         });
     });
 

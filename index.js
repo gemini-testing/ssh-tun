@@ -3,7 +3,8 @@
 var inherit = require('inherit'),
     q = require('q'),
     childProcess = require('child_process'),
-    util = require('util');
+    util = require('util'),
+    EventEmitter = require('events').EventEmitter;
 
 var DEFAULTS = {
     MAX_RETRIES: 5,
@@ -11,7 +12,7 @@ var DEFAULTS = {
     SSH_PORT: 22
 };
 
-var Tunnel = inherit({
+var Tunnel = inherit(EventEmitter, {
     /**
      * Constuctor
      * @param {object} opts tunnel options
@@ -24,6 +25,8 @@ var Tunnel = inherit({
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
      */
     __constructor: function (opts) {
+        EventEmitter.call(this);
+
         this.host = opts.host;
         this.port = this._generateRandomPort(opts.ports);
         this._sshPort = opts.sshPort || DEFAULTS.SSH_PORT;
@@ -68,7 +71,12 @@ var Tunnel = inherit({
             }
         });
 
-        this._tunnel.on('close', function (code) {
+        this._tunnel.on('exit', function (code, signal) {
+            _this.emit('exit', code, signal);
+        });
+
+        this._tunnel.on('close', function (code, signal) {
+            _this.emit('close', code, signal);
             return _this._closeTunnel(code);
         });
 
