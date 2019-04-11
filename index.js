@@ -51,23 +51,19 @@ var Tunnel = inherit(EventEmitter, {
 
         this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
 
+        var cleanup = function () {
+            _this._tunnel.stderr.removeAllListeners('data');
+        };
+
         this._tunnel.stderr.on('data', function (data) {
             if (/success/.test(data)) {
+                cleanup();
                 return _this._resolveTunnel();
             }
 
             if (/failed/.test(data)) {
-                if (_this._tunnelDeferred.promise.isFulfilled()) {
-                    return;
-                }
+                cleanup();
                 return _this._rejectTunnel();
-            }
-
-            if (/killed/i.test(data)) {
-                var msg = data.toString().toLowerCase();
-                var killMsg = msg.slice(msg.indexOf('killed')).trim();
-
-                console.info('INFO: Tunnel is ' + killMsg);
             }
         });
 
