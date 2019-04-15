@@ -161,26 +161,6 @@ describe('Tunnel', function () {
                         .to.be.not.calledWith(util.format('ERROR: failed to create tunnel to %s.', tunnel.proxyHost));
                 });
 
-                it('should log a kill signal with which the tunnel is closed', function () {
-                    tunnel = createTunnel();
-
-                    tunnel.open();
-                    ssh.stderr.emit('data', 'channel 0: \nKilled BY signal 2');
-
-                    expect(console.info.secondCall.args[0])
-                        .to.be.equal('INFO: Tunnel is killed by signal 2');
-                });
-
-                it('should not log a kill signal if tunnel is closed successfully', function () {
-                    tunnel = createTunnel();
-
-                    tunnel.open();
-                    ssh.stderr.emit('data', 'Exit status 0');
-
-                    expect(console.info).to.be.calledOnce;
-                    expect(console.info.firstCall.args[0]).to.not.match(/INFO: Tunnel is killed/);
-                });
-
                 it('should reject tunnel opening if error occured', function () {
                     tunnel = createTunnel();
 
@@ -244,6 +224,28 @@ describe('Tunnel', function () {
                     expect(ssh.kill).to.be.calledWith('SIGKILL');
                     clock.restore();
                 });
+            });
+
+            it('should emit close event', function () {
+                tunnel = createTunnel();
+                tunnel.open();
+
+                var closeHandler = sandbox.stub();
+                tunnel.on('close', closeHandler);
+                ssh.emit('close', null, 'SIGKILL');
+
+                return expect(closeHandler).to.be.calledWith(null, 'SIGKILL');
+            });
+
+            it('should emit exit event', function () {
+                tunnel = createTunnel();
+                tunnel.open();
+
+                var exitHandler = sandbox.stub();
+                tunnel.on('exit', exitHandler);
+                ssh.emit('exit', 0, null);
+
+                return expect(exitHandler).to.be.calledWith(0, null);
             });
         });
     });

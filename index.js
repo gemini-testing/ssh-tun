@@ -3,7 +3,8 @@
 var inherit = require('inherit'),
     q = require('q'),
     childProcess = require('child_process'),
-    util = require('util');
+    util = require('util'),
+    EventEmitter = require('events').EventEmitter;
 
 var DEFAULTS = {
     MAX_RETRIES: 5,
@@ -11,7 +12,7 @@ var DEFAULTS = {
     SSH_PORT: 22
 };
 
-var Tunnel = inherit({
+var Tunnel = inherit(EventEmitter, {
     /**
      * Constuctor
      * @param {object} opts tunnel options
@@ -24,6 +25,8 @@ var Tunnel = inherit({
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
      */
     __constructor: function (opts) {
+        EventEmitter.call(this);
+
         this.host = opts.host;
         this.port = this._generateRandomPort(opts.ports);
         this._sshPort = opts.sshPort || DEFAULTS.SSH_PORT;
@@ -48,27 +51,28 @@ var Tunnel = inherit({
 
         this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
 
+        var cleanup = function () {
+            _this._tunnel.stderr.removeAllListeners('data');
+        };
+
         this._tunnel.stderr.on('data', function (data) {
             if (/success/.test(data)) {
+                cleanup();
                 return _this._resolveTunnel();
             }
 
             if (/failed/.test(data)) {
-                if (_this._tunnelDeferred.promise.isFulfilled()) {
-                    return;
-                }
+                cleanup();
                 return _this._rejectTunnel();
-            }
-
-            if (/killed/i.test(data)) {
-                var msg = data.toString().toLowerCase();
-                var killMsg = msg.slice(msg.indexOf('killed')).trim();
-
-                console.info('INFO: Tunnel is ' + killMsg);
             }
         });
 
-        this._tunnel.on('close', function (code) {
+        this._tunnel.on('exit', function (code, signal) {
+            _this.emit('exit', code, signal);
+        });
+
+        this._tunnel.on('close', function (code, signal) {
+            _this.emit('close', code, signal);
             return _this._closeTunnel(code);
         });
 
