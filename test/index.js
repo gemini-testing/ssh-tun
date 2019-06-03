@@ -118,6 +118,30 @@ describe('Tunnel', function () {
                     expect(sshArgs).to.contain('user@remote_host');
                 });
 
+                it('should spawn tunnel with StrictHostKeyChecking=no if host verification is disabled', function () {
+                    tunnel = createTunnel({
+                        strictHostKeyChecking: false
+                    });
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('-o StrictHostKeyChecking=no');
+                });
+
+                it('should spawn tunnel with provided identity file disabled', function () {
+                    tunnel = createTunnel({
+                        identity: '~/.ssh/id_rsa_alt'
+                    });
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('-i ~/.ssh/id_rsa_alt');
+                });
+
                 it('should resolve promise if tunnel successfully created', function () {
                     tunnel = createTunnel();
 
