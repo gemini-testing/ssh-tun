@@ -23,6 +23,8 @@ var Tunnel = inherit(EventEmitter, {
      * @param {string} [opts.sshPort=22] host port to create tunnel
      * @param {number} [opts.maxRetries=5] max attempts to create tunnel
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
+     * @param {boolean} [opts.strictHostKeyChecking=true] verify host authenticity
+     * @param {string} [opts.identity] private key for public key authentication
      */
     __constructor: function (opts) {
         EventEmitter.call(this);
@@ -38,6 +40,8 @@ var Tunnel = inherit(EventEmitter, {
         this._tunnel = null;
         this._tunnelDeferred = q.defer();
         this._closeDeferred = q.defer();
+        this._strictHostKeyChecking = opts.strictHostKeyChecking === undefined ? true : opts.strictHostKeyChecking;
+        this._identity = opts.identity;
     },
 
     /**
@@ -124,9 +128,11 @@ var Tunnel = inherit(EventEmitter, {
             util.format('-R %d:localhost:%d', this.port, this._localPort),
             '-N',
             '-v',
+            this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
+            this._identity ? util.format('-i %s', this._identity) : '',
             util.format('-p %d', this._sshPort),
             (this.user ? this.user + '@' : '') + this.host
-        ];
+        ].filter(Boolean);
     },
 
     _generateRandomPort: function (ports) {
