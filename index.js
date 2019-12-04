@@ -25,6 +25,7 @@ var Tunnel = inherit(EventEmitter, {
      * @param {number} [opts.connectTimeout=10000] ssh connect timeout
      * @param {boolean} [opts.strictHostKeyChecking=true] verify host authenticity
      * @param {string} [opts.identity] private key for public key authentication
+     * @param {boolean} [opts.compression] use compression
      */
     __constructor: function (opts) {
         EventEmitter.call(this);
@@ -41,6 +42,7 @@ var Tunnel = inherit(EventEmitter, {
         this._tunnelDeferred = q.defer();
         this._closeDeferred = q.defer();
         this._strictHostKeyChecking = opts.strictHostKeyChecking === undefined ? true : opts.strictHostKeyChecking;
+        this._compression = opts.compression;
         this._identity = opts.identity;
     },
 
@@ -129,6 +131,9 @@ var Tunnel = inherit(EventEmitter, {
             '-N',
             '-v',
             this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
+            this._compression !== undefined ?
+                util.format('-o Compression=%s', this._compression ? 'yes' : 'no')
+                : '',
             this._identity ? util.format('-i %s', this._identity) : '',
             util.format('-p %d', this._sshPort),
             (this.user ? this.user + '@' : '') + this.host
