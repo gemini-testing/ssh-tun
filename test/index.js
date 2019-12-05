@@ -142,6 +142,28 @@ describe('Tunnel', function () {
                     expect(sshArgs).to.contain('-i ~/.ssh/id_rsa_alt');
                 });
 
+                it('should spawn tunnel with "Compression" param if compression is provided', function () {
+                    tunnel = createTunnel({
+                        compression: true
+                    });
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('-o Compression=yes');
+                });
+
+                it('should spawn tunnel without "Compression" param if compression is undefined', function () {
+                    tunnel = createTunnel();
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.not.contain('-o Compression');
+                });
+
                 it('should resolve promise if tunnel successfully created', function () {
                     tunnel = createTunnel();
 
