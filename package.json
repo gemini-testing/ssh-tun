@@ -31,7 +31,7 @@
     "Anton Usmansky <j0tunn@ya.ru>"
   ],
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 8.6.0"
   },
   "scripts": {
     "test": "npm run lint && npm run unit-test",
