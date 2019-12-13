@@ -4,7 +4,9 @@ var inherit = require('inherit'),
     q = require('q'),
     childProcess = require('child_process'),
     util = require('util'),
-    EventEmitter = require('events').EventEmitter;
+    EventEmitter = require('events').EventEmitter,
+    debug = require('debug')('ssh-tun'),
+    ActivityWatcher = require('./activity-watcher');
 
 var DEFAULTS = {
     MAX_RETRIES: 5,
@@ -26,6 +28,7 @@ var Tunnel = inherit(EventEmitter, {
      * @param {boolean} [opts.strictHostKeyChecking=true] verify host authenticity
      * @param {string} [opts.identity] private key for public key authentication
      * @param {boolean} [opts.compression] use compression
+     * @param {number} [opts.inactivityTimeout] inactivity timeout (including keep-alive pings)
      */
     __constructor: function (opts) {
         EventEmitter.call(this);
@@ -36,6 +39,7 @@ var Tunnel = inherit(EventEmitter, {
         this.user = opts.user;
         this.proxyHost = util.format('%s:%d', this.host, this.port);
         this.proxyUrl = this.proxyHost; // deprecated, use proxyHost
+        this.connected = false;
         this._localPort = opts.localport;
         this._connectTimeout = opts.connectTimeout || DEFAULTS.CONNECT_TIMEOUT;
         this._tunnel = null;
@@ -44,6 +48,9 @@ var Tunnel = inherit(EventEmitter, {
         this._strictHostKeyChecking = opts.strictHostKeyChecking === undefined ? true : opts.strictHostKeyChecking;
         this._compression = opts.compression;
         this._identity = opts.identity;
+
+        this._activityWatcher = opts.inactivityTimeout > 0 ?
+            new ActivityWatcher(opts.inactivityTimeout, this.close.bind(this)) : null;
     },
 
     /**
@@ -55,23 +62,35 @@ var Tunnel = inherit(EventEmitter, {
 
         console.info('INFO: creating tunnel to %s', this.proxyHost);
 
-        this._tunnel = childProcess.spawn('ssh', this._buildSSHArgs());
+        var cmd = this._buildSSHArgs();
+        debug('running ssh: ssh', cmd.join(' '));
+
+        this._tunnel = childProcess.spawn('ssh', cmd);
 
         var cleanup = function () {
             _this._tunnel.stderr.removeAllListeners('data');
         };
 
-        this._tunnel.stderr.on('data', function (data) {
+        var onData = function (data) {
+            if (_this._activityWatcher) {
+                debug('data:', data.toString());
+                _this._activityWatcher.update();
+            }
+
             if (/success/.test(data)) {
-                cleanup();
+                if (!_this._activityWatcher) {
+                    cleanup();
+                }
+
                 return _this._resolveTunnel();
             }
 
-            if (/failed/.test(data)) {
-                cleanup();
+            if (!_this.connected && /failed/.test(data)) {
                 return _this._rejectTunnel();
             }
-        });
+        };
+
+        this._tunnel.stderr.on('data', onData);
 
         this._tunnel.on('exit', function (code, signal) {
             _this.emit('exit', code, signal);
@@ -101,6 +120,7 @@ var Tunnel = inherit(EventEmitter, {
         var _this = this;
 
         this._tunnel.kill('SIGTERM');
+
         return this._closeDeferred.promise.timeout(3000).fail(function () {
             _this._tunnel.kill('SIGKILL');
             return _this._closeTunnel(-1);
@@ -109,6 +129,13 @@ var Tunnel = inherit(EventEmitter, {
 
     _resolveTunnel: function () {
         console.info('INFO: Tunnel created to %s', this.proxyHost);
+
+        if (this._activityWatcher) {
+            debug('start activity watcher');
+            this._activityWatcher.start();
+        }
+
+        this.connected = true;
         this._tunnelDeferred.resolve();
     },
 
@@ -122,6 +149,8 @@ var Tunnel = inherit(EventEmitter, {
 
     _closeTunnel: function (exitCode) {
         console.info('INFO: Tunnel to %s closed. Exit code: %d', this.proxyHost, exitCode);
+
+        this.connected = false;
         this._closeDeferred.resolve();
     },
 
