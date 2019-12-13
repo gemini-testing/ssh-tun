@@ -39,6 +39,7 @@
     "unit-test": "istanbul test _mocha --recursive test"
   },
   "dependencies": {
+    "debug": "^4.1.1",
     "inherit": "^2.2.2",
     "q": "^1.4.1"
   },
