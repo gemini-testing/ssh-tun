@@ -66,31 +66,7 @@ var Tunnel = inherit(EventEmitter, {
         debug('running ssh: ssh', cmd.join(' '));
 
         this._tunnel = childProcess.spawn('ssh', cmd);
-
-        var cleanup = function () {
-            _this._tunnel.stderr.removeAllListeners('data');
-        };
-
-        var onData = function (data) {
-            if (_this._activityWatcher) {
-                debug('data:', data.toString());
-                _this._activityWatcher.update();
-            }
-
-            if (/success/.test(data)) {
-                if (!_this._activityWatcher) {
-                    cleanup();
-                }
-
-                return _this._resolveTunnel();
-            }
-
-            if (!_this.connected && /failed/.test(data)) {
-                return _this._rejectTunnel();
-            }
-        };
-
-        this._tunnel.stderr.on('data', onData);
+        this._tunnel.stderr.on('data', this._onData.bind(this));
 
         this._tunnel.on('exit', function (code, signal) {
             _this.emit('exit', code, signal);
@@ -125,6 +101,28 @@ var Tunnel = inherit(EventEmitter, {
             _this._tunnel.kill('SIGKILL');
             return _this._closeTunnel(-1);
         });
+    },
+
+    _onData: function (data) {
+        if (debug.enabled) {
+            debug('data:', data.toString());
+        }
+
+        if (this._activityWatcher) {
+            this._activityWatcher.update();
+        }
+
+        if (/success/.test(data)) {
+            if (!this._activityWatcher) {
+                this._tunnel.stderr.removeAllListeners('data');
+            }
+
+            return this._resolveTunnel();
+        }
+
+        if (!this.connected && /failed/.test(data)) {
+            return this._rejectTunnel();
+        }
     },
 
     _resolveTunnel: function () {
