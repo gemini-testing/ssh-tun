@@ -50,7 +50,7 @@ var Tunnel = inherit(EventEmitter, {
         this._identity = opts.identity;
 
         this._activityWatcher = opts.inactivityTimeout > 0 ?
-            new ActivityWatcher(opts.inactivityTimeout, this.close.bind(this)) : null;
+            new ActivityWatcher(opts.inactivityTimeout, this.close.bind(this, 'inactivity timeout')) : null;
     },
 
     /**
@@ -88,17 +88,22 @@ var Tunnel = inherit(EventEmitter, {
      * Closes connection. If no connection established does nothing
      * @returns {Promise}
      */
-    close: function () {
+    close: function (reason) {
+        reason = reason || 'intentional close';
+
         if (!this._tunnel) {
             return q();
         }
 
         var _this = this;
 
+        debug('closing tunnel: ' + reason);
         this._tunnel.kill('SIGTERM');
 
         return this._closeDeferred.promise.timeout(3000).fail(function () {
+            debug('killing tunnel due to termination timeout, original reason: ' + reason);
             _this._tunnel.kill('SIGKILL');
+
             return _this._closeTunnel(-1);
         });
     },
