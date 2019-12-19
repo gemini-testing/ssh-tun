@@ -112,6 +112,10 @@ var Tunnel = inherit(EventEmitter, {
             this._activityWatcher.update();
         }
 
+        if (this.connected) {
+            return;
+        }
+
         if (/success/.test(data)) {
             if (!this._activityWatcher) {
                 this._tunnel.stderr.removeAllListeners('data');
@@ -120,7 +124,7 @@ var Tunnel = inherit(EventEmitter, {
             return this._resolveTunnel();
         }
 
-        if (!this.connected && /failed/.test(data)) {
+        if (/failed/.test(data)) {
             return this._rejectTunnel();
         }
     },
