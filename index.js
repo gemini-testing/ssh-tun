@@ -28,7 +28,7 @@ var Tunnel = inherit(EventEmitter, {
      * @param {boolean} [opts.strictHostKeyChecking=true] verify host authenticity
      * @param {string} [opts.identity] private key for public key authentication
      * @param {boolean} [opts.compression] use compression
-     * @param {number} [opts.inactivityTimeout] inactivity timeout (including keep-alive pings)
+     * @param {number} [opts.inactivityTimeout] inactivity timeout (including keep-alive pings, may degrade performance)
      */
     __constructor: function (opts) {
         EventEmitter.call(this);
@@ -165,7 +165,8 @@ var Tunnel = inherit(EventEmitter, {
         return [
             util.format('-R %d:localhost:%d', this.port, this._localPort),
             '-N',
-            '-v',
+            // heartbeat messages existence is logged to debug3 (penSSH_7.9p1, LibreSSL 2.7.3, macOC Catalina)
+            this._activityWatcher ? '-vvv' : '-v',
             this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
             this._compression !== undefined ?
                 util.format('-o Compression=%s', this._compression ? 'yes' : 'no')
