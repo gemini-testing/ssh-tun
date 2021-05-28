@@ -162,11 +162,13 @@ var Tunnel = inherit(EventEmitter, {
     },
 
     _buildSSHArgs: function () {
+        var shouldBeVerbose = debug.enabled || this._activityWatcher;
+
         return [
             util.format('-R %d:localhost:%d', this.port, this._localPort),
             '-N',
             // heartbeat messages existence is logged to debug3 (penSSH_7.9p1, LibreSSL 2.7.3, macOC Catalina)
-            this._activityWatcher ? '-vvv' : '-v',
+            shouldBeVerbose ? '-vvv' : '-v',
             this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
             this._compression !== undefined ?
                 util.format('-o Compression=%s', this._compression ? 'yes' : 'no')
