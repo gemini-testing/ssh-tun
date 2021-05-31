@@ -122,7 +122,7 @@ var Tunnel = inherit(EventEmitter, {
         }
 
         if (/success/.test(data)) {
-            if (!this._activityWatcher) {
+            if (!this._shouldBeVerbose()) {
                 this._tunnel.stderr.removeAllListeners('data');
             }
 
@@ -162,13 +162,11 @@ var Tunnel = inherit(EventEmitter, {
     },
 
     _buildSSHArgs: function () {
-        var shouldBeVerbose = debug.enabled || this._activityWatcher;
-
         return [
             util.format('-R %d:localhost:%d', this.port, this._localPort),
             '-N',
             // heartbeat messages existence is logged to debug3 (penSSH_7.9p1, LibreSSL 2.7.3, macOC Catalina)
-            shouldBeVerbose ? '-vvv' : '-v',
+            this._shouldBeVerbose() ? '-vvv' : '-v',
             this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
             this._compression !== undefined ?
                 util.format('-o Compression=%s', this._compression ? 'yes' : 'no')
@@ -177,6 +175,10 @@ var Tunnel = inherit(EventEmitter, {
             util.format('-p %d', this._sshPort),
             (this.user ? this.user + '@' : '') + this.host
         ].filter(Boolean);
+    },
+
+    _shouldBeVerbose: function () {
+        return debug.enabled || this._activityWatcher;
     },
 
     _generateRandomPort: function (ports) {
