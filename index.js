@@ -29,6 +29,7 @@ var Tunnel = inherit(EventEmitter, {
      * @param {string} [opts.identity] private key for public key authentication
      * @param {boolean} [opts.compression] use compression
      * @param {number} [opts.inactivityTimeout] inactivity timeout (including keep-alive pings, may degrade performance)
+     * @param {number} [opts.enableDeprecatedSshRsa] add deprecated ssh-rsa to the key algorithms list
      */
     __constructor: function (opts) {
         EventEmitter.call(this);
@@ -48,6 +49,7 @@ var Tunnel = inherit(EventEmitter, {
         this._strictHostKeyChecking = opts.strictHostKeyChecking === undefined ? true : opts.strictHostKeyChecking;
         this._compression = opts.compression;
         this._identity = opts.identity;
+        this._enableDeprecatedSshRsa = opts.enableDeprecatedSshRsa;
 
         this._activityWatcher = opts.inactivityTimeout > 0 ?
             new ActivityWatcher(opts.inactivityTimeout, this.close.bind(this, 'inactivity timeout')) : null;
@@ -168,6 +170,7 @@ var Tunnel = inherit(EventEmitter, {
             // heartbeat messages existence is logged to debug3 (penSSH_7.9p1, LibreSSL 2.7.3, macOC Catalina)
             this._shouldBeVerbose() ? '-vvv' : '-v',
             this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
+            this._enableDeprecatedSshRsa && '-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa',
             this._compression !== undefined ?
                 util.format('-o Compression=%s', this._compression ? 'yes' : 'no')
                 : '',
