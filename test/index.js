@@ -186,6 +186,26 @@ describe('Tunnel', function () {
                     expect(tunnel.proxyHost).to.match(/^some_ssh_host:\d+/);
                 });
 
+                it('should spawn tunnel without deprecated ssh-rsa key algorithms by default', function () {
+                    tunnel = createTunnel();
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.not.contain('-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa');
+                });
+
+                it('should spawn tunnel with ssh-rsa if enableDeprecatedSshRsa option was passed', function () {
+                    tunnel = createTunnel({ enableDeprecatedSshRsa: true });
+
+                    tunnel.open();
+
+                    var sshArgs = childProcess.spawn.lastCall.args[1];
+
+                    expect(sshArgs).to.contain('-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa');
+                });
+
                 it('should reject tunnel opening if failed to create tunnel', function () {
                     tunnel = createTunnel();
 
