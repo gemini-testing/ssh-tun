@@ -203,7 +203,8 @@ describe('Tunnel', function () {
 
                     var sshArgs = childProcess.spawn.lastCall.args[1];
 
-                    expect(sshArgs).to.contain('-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa');
+                    expect(sshArgs).to.contain('-o HostKeyAlgorithms=+ssh-rsa');
+                    expect(sshArgs).to.contain('-o PubkeyAcceptedKeyTypes=+ssh-rsa');
                 });
 
                 it('should reject tunnel opening if failed to create tunnel', function () {

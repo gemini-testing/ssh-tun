@@ -170,14 +170,14 @@ var Tunnel = inherit(EventEmitter, {
             // heartbeat messages existence is logged to debug3 (penSSH_7.9p1, LibreSSL 2.7.3, macOC Catalina)
             this._shouldBeVerbose() ? '-vvv' : '-v',
             this._strictHostKeyChecking === false ? '-o StrictHostKeyChecking=no' : '',
-            this._enableDeprecatedSshRsa && '-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa',
+            this._enableDeprecatedSshRsa && ['-o HostKeyAlgorithms=+ssh-rsa', '-o PubkeyAcceptedKeyTypes=+ssh-rsa'],
             this._compression !== undefined ?
                 util.format('-o Compression=%s', this._compression ? 'yes' : 'no')
                 : '',
             this._identity ? util.format('-i %s', this._identity) : '',
             util.format('-p %d', this._sshPort),
             (this.user ? this.user + '@' : '') + this.host
-        ].filter(Boolean);
+        ].filter(Boolean).flat();
     },
 
     _shouldBeVerbose: function () {
