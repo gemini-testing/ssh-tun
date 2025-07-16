@@ -45,6 +45,7 @@ var Tunnel = inherit(EventEmitter, {
         this._connectTimeout = opts.connectTimeout || DEFAULTS.CONNECT_TIMEOUT;
         this._tunnel = null;
         this._tunnelDeferred = q.defer();
+        this._tunnelCloseOnProcessExitListeners = new WeakMap();
         this._closeDeferred = q.defer();
         this._strictHostKeyChecking = opts.strictHostKeyChecking === undefined ? true : opts.strictHostKeyChecking;
         this._compression = opts.compression;
@@ -83,6 +84,16 @@ var Tunnel = inherit(EventEmitter, {
             return _this._rejectTunnel();
         });
 
+        function tunnelCloseOnProcessExit(tunnel) {
+            tunnel.kill('SIGKILL');
+        }
+
+        var tunnelCloseOnProcessExitCb = tunnelCloseOnProcessExit.bind(null, this._tunnel);
+
+        this._tunnelCloseOnProcessExitListeners.set(this._tunnel, tunnelCloseOnProcessExitCb);
+
+        process.on('exit', tunnelCloseOnProcessExitCb);
+
         return _this._tunnelDeferred.promise.timeout(this._connectTimeout);
     },
 
@@ -101,6 +112,12 @@ var Tunnel = inherit(EventEmitter, {
 
         debug('closing tunnel: ' + reason);
         this._tunnel.kill('SIGTERM');
+
+        if (this._tunnelCloseOnProcessExitListeners.has(this._tunnel)) {
+            process.removeListener('exit', this._tunnelCloseOnProcessExitListeners.get(this._tunnel));
+
+            this._tunnelCloseOnProcessExitListeners.delete(this._tunnel);
+        }
 
         return this._closeDeferred.promise.timeout(3000).fail(function () {
             debug('killing tunnel due to termination timeout, original reason: ' + reason);
